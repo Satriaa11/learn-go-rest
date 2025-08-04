@@ -97,9 +97,56 @@ func createProduct(w http.ResponseWriter, r *http.Request) {
 
 func updateProduct(w http.ResponseWriter, r *http.Request) {
 
+	// Baca path value dari URL
+	productID := r.PathValue("id")               // Ambil ID produk dari URL
+	productIDint, err := strconv.Atoi(productID) // Konversi ID produk ke integer
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(500) // Internal Server Error
+		w.Write([]byte(`{"error": "Internal Server Error"}`))
+		return // Tambahkan return untuk menghentikan eksekusi
+	}
+
+	// baca body request
+	bodyByte, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(400) // Bad Request
+		w.Write([]byte(`{"error": "Bad Request"}`))
+		return // Tambahkan return untuk menghentikan eksekusi
+	}
+
+	// unmarshal konversi JSON ke struct Products
+	var products Products
+	err = json.Unmarshal(bodyByte, &products)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(400) // Bad Request
+		w.Write([]byte(`{"error": "Bad Request"}`))
+		return // Tambahkan return untuk menghentikan eksekusi
+	}
+
+	products.ID = productID           // supaya ID produk tetap sama(tidak berubah)
+	database[productIDint] = products // Update produk di database (Map)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200) // OK
+	w.Write([]byte(`{"message": "Product updated successfully"}`))
 }
 
 func deleteProduct(w http.ResponseWriter, r *http.Request) {
-	// 4. buat handler untuk route "/products/{id}"
-	// 5. tambahkan handler ke multiplexer
+	productID := r.PathValue("id") // Ambil ID produk dari URL
+
+	productIDint, err := strconv.Atoi(productID) // Konversi ID produk ke integer
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(500) // Internal Server Error
+		w.Write([]byte(`{"error": "Internal Server Error"}`))
+		return // Tambahkan return untuk menghentikan eksekusi
+	}
+
+	delete(database, productIDint) // Hapus produk dari database (Map)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200) // OK
+	w.Write([]byte(`{"message": "Product deleted successfully"}`))
 }
